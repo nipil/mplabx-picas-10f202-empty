@@ -2,6 +2,8 @@
 
 See [this page](https://developerhelp.microchip.com/xwiki/bin/view/software-tools/ides/x/version-control/working-with-version-control/) for `.gitignore` files for MPLAB projects
 
+See [the manual](https://ww1.microchip.com/downloads/en/DeviceDoc/MPLAB%20XC8%20PIC%20Assembler%20User%27s%20Guide%2050002974A.pdf) for instruction for the assembler shipped with XC8.
+
 ## Note about MPLAB X "post-install"
 
 I noticed i had to restart MPLAB a few times after installation (so that everything settles ?)
@@ -24,6 +26,27 @@ Because at first, compilation failed with `(2043) target device was not recogniz
     BUILD FAILED (exit value 2, total time: 108ms)
 
 After an exit/restart of MPLAB X, it just compiled.
+
+According to the `Makefile-*` files, it seems that the "Device Family Pack" package was not loaded at first ?
+
+## Updating Device Family Pack
+
+Go to `Tools / Packs` menu
+
+- Click `Check for updates`
+- Enter your chip number in the text box on the right
+- On the left, maybe you have "new" and can `Update`
+- if so, please proceed
+
+Then update your project to use the newer DFP
+
+- in the project dashboard, click the "Properties" button
+- go to `Conf` section
+- select the newer version in the "Packs" section on the right
+- re-select "pic-as" as compiler toolchain
+- click OK
+
+Note : the DFP installed in system (at software install ?) cannot be uninstalled.
 
 ## Preliminary verification
 
