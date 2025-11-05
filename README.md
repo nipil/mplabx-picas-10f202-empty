@@ -29,6 +29,46 @@ After an exit/restart of MPLAB X, it just compiled.
 
 According to the `Makefile-*` files, it seems that the "Device Family Pack" package was not loaded at first ?
 
+## Interesting options
+
+### Debugging
+
+Go to `Tools/Options/Embedded`
+
+- debug reset `reset vector`
+- debug startup `halt at reset vector`
+
+### Chip fuses
+
+Go to `Window/Target Memory View/Configuration bits`
+
+- you can browse the flags
+- you can modify and generate code to include in your source
+
+### Registers
+
+Go to `Window/Target Memory View/File registers` for user addressable registers
+
+Go to `Window/Target Memory View/SFR` for chip registers
+
+Go to `Window/Debugging/Watched` and add a watch to `WREG`
+
+### Section locations
+
+Go to project properties
+
+- Select `pic-as Global Options`
+- edit `Additional options`
+
+Enter a parameter for each section location
+
+    -Wl,-pNAME=1234h
+
+Where
+
+- `-Wl` transmits the option to the linker
+- `-p` places section `NAME` at address `0x1234` in memory
+
 ## Updating Device Family Pack
 
 Go to `Tools / Packs` menu
