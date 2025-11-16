@@ -8,12 +8,13 @@
 
     #include "xc.inc"
 
-    PSECT resetVector, class=CODE
+    PSECT resetVector, global, class=CODE, delta=2
 resetVector:
-    MOVLW 00h
+    MOVLW 69h ; if you need to reset/override OSCCAL
 
-    PSECT main, class=CODE
+    PSECT main, global, class=CODE, delta=2
 main:
-    MOVLW 1
+    MOVLW 51h
+    MOVLW 33h
     GOTO main
     END

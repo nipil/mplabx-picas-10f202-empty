@@ -20,6 +20,9 @@
       <itemPath>main.s</itemPath>
     </logicalFolder>
   </logicalFolder>
+  <sourceRootList>
+    <Elem>.</Elem>
+  </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
     <conf name="default" type="2">
@@ -1021,7 +1024,7 @@
       </Tool>
       <pic-as-assembler>
         <property key="fmax-errors" value="20"/>
-        <property key="list-custom-assembler-options" value=""/>
+        <property key="list-custom-assembler-options" value="-a"/>
         <property key="list-custom-preprocessor-options" value=""/>
         <property key="list-ddefine-symbols" value=""/>
         <property key="list-define-symbols" value=""/>
@@ -1035,21 +1038,20 @@
         <property key="custom-dfp" value=""/>
         <property key="dfp-override" value="1"/>
         <property key="instruction-set" value="std"/>
-        <property key="summary-class" value="false"/>
+        <property key="summary-class" value="true"/>
         <property key="summary-file" value="false"/>
-        <property key="summary-hex" value="false"/>
+        <property key="summary-hex" value="true"/>
         <property key="summary-mem" value="true"/>
-        <property key="summary-psect" value="false"/>
+        <property key="summary-psect" value="true"/>
         <property key="summary-sha1" value="false"/>
         <property key="summary-sha256" value="false"/>
         <property key="summary-xml" value="false"/>
         <property key="summary-xmlfull" value="false"/>
-        <appendMe value="-Wl,-pmain=0h -Wl,-presetVector=1FFh"/>
       </pic-as-global>
       <pic-as-linker>
         <property key="linker-callgraph" value="std"/>
         <property key="linker-checksum" value=""/>
-        <property key="linker-custom-options" value=""/>
+        <property key="linker-custom-options" value="-pmain=000h;-presetVector=1FFh"/>
         <property key="linker-fill" value=""/>
         <property key="linker-format-hex-file-for-download" value="false"/>
         <property key="linker-libraries" value=""/>

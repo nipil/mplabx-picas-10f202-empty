@@ -4,6 +4,28 @@ See [this page](https://developerhelp.microchip.com/xwiki/bin/view/software-tool
 
 See [the manual](https://ww1.microchip.com/downloads/en/DeviceDoc/MPLAB%20XC8%20PIC%20Assembler%20User%27s%20Guide%2050002974A.pdf) for instruction for the assembler shipped with XC8.
 
+See [the migration guide](https://onlinedocs.microchip.com/oxy/GUID-6EF91A11-1A5C-4C0A-8A18-67AD6D50B17B-en-US-2/GUID-34FE7635-E398-49D5-B986-393EA335B217.html) for convention change about file extensions
+
+## IMPORTANT
+
+### hex bytes vs word size
+
+From the manual, section "4.9.40.4 Delta Flag"
+
+    The delta psect flag defines the size of the addressable unit.
+    In other words, the number of data bytes that are associated with each address.
+    With PIC Mid-range and Baseline devices, the program memory space is word addressable
+    So, psects in this space must use a delta of 2. That is to say, each address in
+    program memory requires 2 bytes of data in the HEX file to define their contents.
+    So, addresses in the HEX file will not match addresses in the program memory.
+
+As a consequence for `CODE` sections :
+
+- Each `CODE` "psect" in the assembly source mus have a `delta=2`option
+- Addresses in the HEX file are twice the MEMORY address of the target word
+
+If this rule is not respected, the assembled HEX file will contain incomplete instructions !
+
 ## Note about MPLAB X "post-install"
 
 I noticed i had to restart MPLAB a few times after installation (so that everything settles ?)
@@ -29,7 +51,7 @@ After an exit/restart of MPLAB X, it just compiled.
 
 According to the `Makefile-*` files, it seems that the "Device Family Pack" package was not loaded at first ?
 
-## Interesting options
+## Interesting stuff
 
 ### Debugging
 
@@ -53,21 +75,38 @@ Go to `Window/Target Memory View/SFR` for chip registers
 
 Go to `Window/Debugging/Watched` and add a watch to `WREG`
 
-### Section locations
+## Project Configuration
+
+IMPORTANT: use the "refresh button" or close/reopen the project.
+
+### Compilation output
 
 Go to project properties
 
 - Select `pic-as Global Options`
-- edit `Additional options`
+- Select `Summary output` in "option categories"
+- Check `psect`, `class`, `hex`
 
-Enter a parameter for each section location
+### Assembler
 
-    -Wl,-pNAME=1234h
+Go to project properties
 
-Where
+- Select `pic-as Assembler`
+- Select `Custom options` in "option categories"
+- Add options in "custom assembler options" (one per line)
+  - `-a` to generate assembly file
 
-- `-Wl` transmits the option to the linker
-- `-p` places section `NAME` at address `0x1234` in memory
+### Linker
+
+Go to project properties
+
+- Select `pic-as Linker`
+- Select `General` in "option categories"
+- Add options in "custom linker options" (one per line)
+  - `-pmain=000h` to place the main code at the start of program Memory
+  - `-presetVector=1FFh` to place the OSCCAL instruction at reset vector
+
+IMPORTANT: the `-DCODE=2` override does not seem to be taken into account.
 
 ## Updating Device Family Pack
 
@@ -121,10 +160,10 @@ Verification of supported device
 
 - window / projects
   - right-click source files
-  - new / assemblyFile.asm
-  - main.asm (at project root)
+  - new / assemblyFile.s
+  - main.s (at project root)
 
-- see [main.asm](main.asm) for content
+- see [main.s](main.s) for content
 
 ## Compilation
 
@@ -161,10 +200,103 @@ Shift+F11 to clean beforehand
 
 ## Analysis
 
-After compiling, the hex file is in `dist/default/production/*.hex` and it contains :
+After compiling, we look at the compilation log, and we see two messages
 
-    :0203FE00FF0BF3
+1. `Non line specific message::: advisory: (2091) fixup overflow messages have been recorded in the list file "build/default/production\main.lst"`
+
+2. `build/default/production/main.o:0:: warning: (528) no start record; entry point defaults to zero`
+
+### analysis for number 1
+
+Go to `build/default/production` and you will find an `*.lst` file for disassembly.
+
+    159                            psect resetVector
+    160      3FA                     resetVector:
+    161      3FA  C69                 movlw 105 ; if you need to reset/override OSCCAL
+    162
+    163                            psect main
+    164      3FC                     main:
+    165      3FC  C51                 movlw 81
+    166      3FD  C33                 movlw 51
+    167      3FE
+                  warning: (2090) fixup overflow storing 0x3FC in 2 bytes
+                  BFC                 goto main
+    168
+    169                            psect config
+    170
+    171                           ;Config register CONFIG @ 0xFFF
+    172                           ; Oscillator
+    173                           ; OSC = 0x1, unprogrammed default
+    174                           ; Watchdog Timer
+    175                           ; WDTE = OFF, WDT disabled
+    176                           ; Code Protect
+    177                           ; CP = OFF, Code protection off
+    178                           ; Master Clear Enable
+    179                           ; MCLRE = OFF, GP3/MCLR pin fuction is digital I/O, MCLR internally tied to VDD
+    180      FFF                      org 4095
+    181      FFF  0FEB                dw 4075
+
+But the HEX in `dist/default/production/*.hex` and it contains, _with misconfigured options_ :
+
+    :0103FA006999
+    :0403FC005133FC0B72
     :021FFE00EB0FE7
     :00000001FF
 
-So it would contain 2 bytes for adress `03FEh` and 2 bytes for `1FFEh`, but no "goto" code for `0000`, so there is something wrong in our source code.
+So it would contain
+
+- 1 byte for adress `03FAh` --> but the instruction is 12 bits, and 12 bits does not fit in a byte !
+- 2 bytes for `03FCh` --> same, two MOVLW instructions do not fit in 2 bytes, yet the GOTO is "fully" there !
+- 2 bytes for `1FFEh` --> ok it can hold the 12-bit config word, but the address is weird (not `3FF`)
+
+The warning in the `.lst` file is clear : the linker does not have enough room to fit the encoded instruction.
+
+What is wrong in our configuration ?
+
+- the `delta` (number of HEX byte per instruction word) of the `psect` was not set properly
+- the relocation of the different section has not been done
+
+See `Linker options` to fix both of these.
+
+After correcting the settings according to the above sections, we finally get :
+
+    :06000000510C330C000A54
+    :0203FE00690C88
+    :021FFE00EB0FE7
+    :00000001FF
+
+What do we read from it :
+
+- each instruction is now "complete" with 2 bytes per word (no `0xC..` missing)
+- the `delta`setting makes every HEX addresses actually double mcu mem address : hex `03FE` = mem `01FF * 2`
+- the config section (_which cannot be relocated !_) and the configuration word is at hex `1FFE` = mem `FFF`
+
+And the `*.lst` files tells us the "correct" story :
+
+    159                            psect resetVector
+    160      1FF                     resetVector:
+    161      1FF  0C69                movlw 105 ; if you need to reset/override OSCCAL
+    162
+    163                            psect main
+    164      000                     main:
+    165      000  0C51                movlw 81
+    166      001  0C33                movlw 51
+    167      002  0A00                goto main
+    168
+    169                            psect config
+    170
+    171                           ;Config register CONFIG @ 0xFFF
+    172                           ; Oscillator
+    173                           ; OSC = 0x1, unprogrammed default
+    174                           ; Watchdog Timer
+    175                           ; WDTE = OFF, WDT disabled
+    176                           ; Code Protect
+    177                           ; CP = OFF, Code protection off
+    178                           ; Master Clear Enable
+    179                           ; MCLRE = OFF, GP3/MCLR pin fuction is digital I/O, MCLR internally tied to VDD
+    180      FFF                      org 4095
+    181      FFF  0FEB                dw 4075
+
+### analysis for number 2
+
+To be done...
