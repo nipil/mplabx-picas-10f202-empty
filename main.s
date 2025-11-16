@@ -17,4 +17,4 @@ main:
     MOVLW 51h
     MOVLW 33h
     GOTO main
-    END
+    END main

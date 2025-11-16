@@ -299,4 +299,17 @@ And the `*.lst` files tells us the "correct" story :
 
 ### analysis for number 2
 
-To be done...
+As per MPLAB pic-as manual, section 4.9.13, for end directive :
+
+	If an expression is supplied as an argument, that expression will be used
+    to define the entry point of the program. This is stored in a start record
+    in the object file produced by the assembler. Whether this is of any use
+    will depend on the linker.
+
+Example use :
+
+    end main
+	; instead of :
+	; end
+
+This removes the warning shown in number 2.
