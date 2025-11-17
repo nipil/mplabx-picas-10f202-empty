@@ -6,6 +6,8 @@ See [the manual](https://ww1.microchip.com/downloads/en/DeviceDoc/MPLAB%20XC8%20
 
 See [the migration guide](https://onlinedocs.microchip.com/oxy/GUID-6EF91A11-1A5C-4C0A-8A18-67AD6D50B17B-en-US-2/GUID-34FE7635-E398-49D5-B986-393EA335B217.html) for convention change about file extensions
 
+See [the programming datasheet (rev F)](https://ww1.microchip.com/downloads/en/DeviceDoc/41228F.pdf) for intricate details
+
 ## IMPORTANT
 
 ### hex bytes vs word size
@@ -297,11 +299,16 @@ And the `*.lst` files tells us the "correct" story :
     180      FFF                      org 4095
     181      FFF  0FEB                dw 4075
 
+Here, the configuration is definitely at `FFF` memory, instead of the `1FF/3FF` mentionned in the programming datasheet.
+But that is normal (as stated in _recent_ version of the programming spec) as the _convention_ for the _address_
+of the configuration word is to set it at `FFF`. The compiler/linker actually _delegate to the programmer_ in order
+to write it to the appropriate address for the device being programmed (ie. `1FF/3FF` for 10F200/202/204/206)
+
 ### analysis for number 2
 
 As per MPLAB pic-as manual, section 4.9.13, for end directive :
 
-	If an expression is supplied as an argument, that expression will be used
+    If an expression is supplied as an argument, that expression will be used
     to define the entry point of the program. This is stored in a start record
     in the object file produced by the assembler. Whether this is of any use
     will depend on the linker.
@@ -309,7 +316,7 @@ As per MPLAB pic-as manual, section 4.9.13, for end directive :
 Example use :
 
     end main
-	; instead of :
-	; end
+    ; instead of :
+    ; end
 
 This removes the warning shown in number 2.
